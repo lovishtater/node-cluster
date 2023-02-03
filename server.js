@@ -5,23 +5,17 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
-const productRoutes = require('./router/products')
+const productRoutes = require('./router/products');
+const { connectToDB } = require("./db");
 const cpuLength = os.cpus().length;
 const app = express() 
-const router = express.Router();
 const port = process.env.PORT || 8080;
 
 // DB connection
-mongoose.set('strictQuery', true)
-mongoose.connect('mongodb://localhost:27017/nodecluster',
- {useNewUrlParser: true, useUnifiedTopology: true}).then(() => {
-    console.log("server " + process.pid + " connected to db")
-}).catch((err) => {
-    console.log("err", err)
-})
+connectToDB()
 
 // Middlewares
-app.use(bodyParser.json({limit: '50mb'}))
+app.use(bodyParser.json())
 app.use(cookieParser())
 app.use(cors())
 app.use('/api', productRoutes)
@@ -33,6 +27,7 @@ if(cluster.isMaster) {
     }
     cluster.on('exit', (worker, code, signal) => {
         console.log(`worker ${worker.process.pid} died and ${code} and ${signal}`)
+        cluster.fork()
     })
 } else {
 app.listen(port, ()=> {
